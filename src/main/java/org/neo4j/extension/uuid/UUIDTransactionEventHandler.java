@@ -13,6 +13,8 @@ import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexManager;
 import org.neo4j.graphdb.index.RelationshipIndex;
 
+import java.util.logging.*;
+
 import java.util.UUID;
 
 /**
@@ -24,8 +26,10 @@ import java.util.UUID;
  */
 public class UUIDTransactionEventHandler implements TransactionEventHandler {
 
+    private Logger logger = Logger.getLogger("org.neo4j.examples.server.plugins"); 
     public static final String UUID_PROPERTY_NAME = "uuid";
     public static final String UUID_INDEX_NAME = "uuid";
+    public static final Boolean REPLACE_UUID_BASIC = false;
 
     private final TimeBasedGenerator uuidGenerator = Generators.timeBasedGenerator();
     private final GraphDatabaseService graphDatabaseService;
@@ -75,13 +79,19 @@ public class UUIDTransactionEventHandler implements TransactionEventHandler {
      * @param index index to be used
      */
     private void populateUuidsFor(Iterable<? extends PropertyContainer> propertyContainers, Index index) {
+        
         for (PropertyContainer propertyContainer : propertyContainers) {
             if (!propertyContainer.hasProperty(UUID_PROPERTY_NAME)) {
 
                 final UUID uuid = uuidGenerator.generate();
-                final StringBuilder sb = new StringBuilder();
-                sb.append(Long.toHexString(uuid.getMostSignificantBits())).append(Long.toHexString(uuid.getLeastSignificantBits()));
-                String uuidAsString = sb.toString();
+                String uuidAsString;
+                if(REPLACE_UUID_BASIC){
+                    final StringBuilder sb = new StringBuilder();
+                    sb.append(Long.toHexString(uuid.getMostSignificantBits())).append(Long.toHexString(uuid.getLeastSignificantBits()));
+                    uuidAsString = sb.toString();
+                }else{
+                    uuidAsString = uuid.toString();
+                }
 
                 propertyContainer.setProperty(UUID_PROPERTY_NAME, uuidAsString);
                 index.add(propertyContainer, UUID_PROPERTY_NAME, uuidAsString);
